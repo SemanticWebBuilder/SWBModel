@@ -105,13 +105,11 @@ public class Calendar extends CalendarBase {
 		} else {
 			for (int x = 0; x < nl.getLength(); x++) {
 				Node interval = nl.item(x);
-
+//                                System.out.println("Intervalo:\n"+SWBUtils.XML.nodeToString(interval));
 				try {
 					ret = eval(today, interval);
-
 					if (ret) {
 						ret = true;
-
 						break;
 					}
 				} catch (Exception e) {
@@ -137,7 +135,7 @@ public class Calendar extends CalendarBase {
 	private boolean eval(Date today, Node interval) throws Exception {
 		boolean ret = true;
 		Date inidate = null;
-
+//                System.out.println("eval:\n\n"+SWBUtils.XML.nodeToString(interval)+" \ntoday:"+today.toString());
 		if (interval != null) {
 			NodeList nl = interval.getChildNodes();
 
@@ -146,11 +144,10 @@ public class Calendar extends CalendarBase {
 					String name = nl.item(x).getNodeName();
 
 					if (name.equals("inidate")) {
-						inidate = new Date(nl.item(x).getFirstChild().getNodeValue());
-
+						inidate = new Date(nl.item(x).getFirstChild().getNodeValue());                                              
+//                                                System.out.println("IniDate: "+inidate.toString());
 						if (inidate.after(today)) {
 							ret = false;
-
 							break;
 						}
 					} else if (name.equals("enddate")) {
@@ -254,6 +251,7 @@ public class Calendar extends CalendarBase {
 	private boolean evalIteration(Date inidate, Date today, Node iteration) throws Exception {
 		boolean ret = true;
 
+//                System.out.println("evalIteration:\n\n"+SWBUtils.XML.nodeToString(iteration));
 		try {
 			NodeList nl = iteration.getChildNodes();
 
@@ -300,26 +298,35 @@ public class Calendar extends CalendarBase {
 	 */
 	private boolean evalElement(Date inidate, Date today, Node element) throws Exception {
 		boolean ret = true;
-
+//                System.out.println("evalElement:\n\n"+SWBUtils.XML.nodeToString(element)+" \ntoday:"+today.toString()+" \niniday:"+inidate.toString());
 		try {
 			NodeList nl = element.getChildNodes();
 
 			for (int x = 0; x < nl.getLength(); x++) {
 				String name = nl.item(x).getNodeName();
+                                
 				String value = nl.item(x).getFirstChild().getNodeValue();
 				int val = Integer.parseInt(value);
-
+//                                System.out.println(name+" ("+val+")");
 				if (name.equals("wdays")) {
+//                                    System.out.println((1 << today.getDay()));
 					if (((1 << today.getDay()) & val) == 0) {
 						ret = false;
 						break;
 					}
 				} else if (name.equals("day")) {
-					if (today.getDate() != val) {
+//                                    System.out.println("hoy:"+today.getDate());
+					if (today.getDate() < val) {
 						ret = false;
 						break;
 					}
-				} else if (name.equals("months")) {
+				} else if (name.equals("today")) {
+//                                    System.out.println("hoy:"+today.getDate());
+					if (today.getDate() > val) {
+						ret = false;
+						break;
+					}
+				}else if (name.equals("months")) {
 					int inim = inidate.getMonth(); // mes inicial
 					int actm = today.getMonth(); // mes actual
 					int dify = today.getYear() - inidate.getYear(); // diferencia de años
@@ -331,9 +338,18 @@ public class Calendar extends CalendarBase {
 						break;
 					}
 				} else if (name.equals("week")) {
-					int week = (int) ((today.getDate() + inidate.getDay() - 1) / 7) + 1;
-
-					if ((val != week) && (val == 5) && (week != 4)) {
+                                    
+                                        java.util.Calendar cal = java.util.Calendar.getInstance();
+                                        cal.setTime(today);
+                                        int week = cal.get(java.util.Calendar.DAY_OF_WEEK_IN_MONTH);
+                                        
+                                         java.util.Calendar last = java.util.Calendar.getInstance();
+                                        last.setTime(today);
+                                        last.add(java.util.Calendar.DATE, 7);
+                                        boolean lastweek = cal.get(java.util.Calendar.MONTH)!=last.get(java.util.Calendar.MONTH);
+					//int week = (int) ((today.getDate() + inidate.getDay() - 1) / 7) + 1;
+//                                        System.out.println("\n\ntoday.getDate("+today.getDate()+")\ninidate.getDay("+inidate.getDay()+")\nweek:"+week);
+					if ((val<5 && val != week) || ((val == 5) && !lastweek)) {
 						ret = false;
 						break;
 					}
